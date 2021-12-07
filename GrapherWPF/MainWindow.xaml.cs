@@ -27,9 +27,6 @@ namespace GrapherWPF
         }
 
         double GridStep = 1d;
-
-        double StartGraphX = -10f;
-        double EndGraphX = 10f;
         double XPercentStep = 0.1f; //Percent off range we step -> 0.1% = 1000 x plots
 
         public string[] CleanInput()
@@ -49,37 +46,32 @@ namespace GrapherWPF
                 {
                     SpacedData += ' ';
                 }
+                if (i == UnspacedData.Length - 2) SpacedData += UnspacedData[UnspacedData.Length - 1];
             }
-            SpacedData += UnspacedData[UnspacedData.Length - 1];
 
             return SpacedData.Split(' ');
         }
 
         public void Graph()
-        {            
-            List<string> Formula = RPN.RPNGenerator(CleanInput());
-          //  if (Formula[Formula.Count-1] == "-") Formula.Insert(0, "0");
+        {
+            string[] Tokens = CleanInput();
+            if (Tokens.Length == 1 && Tokens[0] == "") return;
+
+            List<string> Formula = RPN.RPNGenerator(Tokens);
+            //  if (Formula[Formula.Count-1] == "-") Formula.Insert(0, "0");
+
+            double StartGraphX = -10f;
+            double EndGraphX = 10f;
 
             double PreviousX = StartGraphX;
             double PreviousY = RPN.FormulaCalculator(Formula, PreviousX);
 
             double Scale = GraphCanvas.ActualWidth / (EndGraphX - StartGraphX);
+
             double XOffset = 0 - StartGraphX;
-
-            //redo for y
-            /*
-            for (double i = StartGraphX; i < EndGraphX; i += GridStep)
-            {                
-                Line NewLine = new Line();
-                NewLine.X1 = (i + XOffset) * Scale;
-                NewLine.Y1 = GraphCanvas.ActualHeight;
-                NewLine.X2 = (i + XOffset) * Scale;
-                NewLine.Y2 = 0;
-                NewLine.Stroke = new SolidColorBrush(Colors.Black);
-
-                GraphCanvas.Children.Add(NewLine);
-            }
-            */
+            double StartGraphY = (GraphCanvas.ActualHeight/GraphCanvas.ActualWidth) * StartGraphX;
+            double EndGraphY = (GraphCanvas.ActualHeight / GraphCanvas.ActualWidth) * EndGraphX;
+            double YOffset = 0 - StartGraphY;
 
             for (double i = StartGraphX; i < EndGraphX; i += GridStep)
             {
@@ -88,7 +80,19 @@ namespace GrapherWPF
                 NewLine.Y1 = GraphCanvas.ActualHeight;
                 NewLine.X2 = (i + XOffset) * Scale;
                 NewLine.Y2 = 0;
-                NewLine.Stroke = new SolidColorBrush(Colors.Black);
+                
+                NewLine.Stroke = new SolidColorBrush(Colors.Gray);
+
+                GraphCanvas.Children.Add(NewLine);
+            }
+            for (double i = StartGraphY; i < EndGraphY; i += GridStep)
+            {
+                Line NewLine = new Line();
+                NewLine.X1 = GraphCanvas.ActualWidth;
+                NewLine.Y1 = (i + YOffset) * Scale;
+                NewLine.X2 = 0;
+                NewLine.Y2 = (i + YOffset) * Scale;
+                NewLine.Stroke = new SolidColorBrush(Colors.Gray);
 
                 GraphCanvas.Children.Add(NewLine);
             }
@@ -113,6 +117,12 @@ namespace GrapherWPF
         }
 
         private void StartButton_Click(object sender, RoutedEventArgs e)
+        {
+            GraphCanvas.Children.Clear();
+            Graph();
+        }
+
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             GraphCanvas.Children.Clear();
             Graph();
